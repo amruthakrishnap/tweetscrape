@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import logging
 from urllib.parse import quote
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,10 +24,6 @@ app = Flask(__name__)
 # client = MongoClient(mongo_con)
 # db = client['sample_mflix']
 # collection = db['Seeding_database']
-mongo_con = 'mongodb+srv://mngdb:FQx6gvpTCbYw6ln2@tomandjerry.g26gvoy.mongodb.net/'
-client = MongoClient(mongo_con)
-db = client['seeding_database']
-collection = db['seeding_collection']    
 
 # Initialize MongoDB collection
 
@@ -47,8 +42,9 @@ def extract_and_update_csv(url, media_type, total_limit):
     # Use Playwright browser automation to scrape the URL
     with sync_playwright() as p:
         # Specify the user data path
-        user_data_path = '/Users/amruthakrishna/documents/firefox/AK/Default'  # Update this path as needed
-        context = p.firefox.launch_persistent_context(user_data_path, headless=True)
+        # user_data_path = '/Users/amruthakrishna/documents/firefox/AK/Default'  # Update this path as needed
+        browser = p.chromium.launch(headless=False, args=["--disable-blink-features=AutomationControlled"])
+        context = browser.new_context()
         page = context.new_page()
 
         # Define the response handler function
