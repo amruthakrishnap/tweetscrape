@@ -7,6 +7,8 @@ from jsonpath_ng import parse
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import logging
+from urllib.parse import quote
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
