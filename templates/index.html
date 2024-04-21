@@ -1,1 +1,487 @@
 
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Media Extractor</title>
+    <link rel="icon" href="https://nealschaffer.com/wp-content/uploads/mariia-shalabaieva-88XcHKPLe3E-unsplash.jpeg">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Custom CSS for better styling */
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1464618663641-bbdd760ae84a?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2Vic2l0ZSUyMGJhY2tncm91bmR8ZW58MHx8MHx8fDA%3D');
+
+        }
+
+        /* Container styling */
+        .container {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        /* Form container */
+        .form-container {
+            width: 60%;
+            padding-right: 10px;
+        }
+
+        /* Previewer section */
+        .previewer {
+            width: 40%;
+            border: 3px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+            height: 580px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .media-embed {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Instructions styling */
+        #instructions {
+            font-weight: bold;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Controls */
+        .controls {
+            margin-bottom: 10px;
+        }
+
+        /* Data table styles */
+        table {
+            width: 100%;
+            margin-top: 40px;
+            overflow-x: auto;
+        }
+
+        table th,
+        table td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        /* Data container */
+        .data-container {
+            overflow-x: 900px;
+        }
+        /* CSS styles for the command prompt box */
+        #status {
+            background-color: black; /* Black background like a command prompt */
+            color: white; /* White text color for status */
+            padding: 10px; /* Padding for spacing around the text */
+            border: 1px solid white; /* White border around the box */
+            font-family: monospace; /* Monospace font for a command prompt look */
+            width: 600px; /* Set a fixed width for the box */
+            height: 50px; /* Set a fixed height for the box */
+            box-sizing: border-box; /* Include padding and border in width and height */
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Media Extractor</h2>
+            <form id="extract-form">
+                <div class="form-group">
+                    <label for="url">Enter URL:</label>
+                    <input type="url" class="form-control" id="url" name="url" required placeholder="Enter URL here...">
+                </div>
+                <div class="form-group">
+                    <label for="media-type">Select Media Type:</label>
+                    <select class="form-control" id="media-type" name="media_type" required>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tagId">Enter Tag ID:</label>
+                    <input type="text" class="form-control" id="tagId" name="tagId" required placeholder="Enter Tag ID here...">
+                </div>
+                <div class="form-group">
+                    <label for="total_limit">Enter Limit:</label>
+                    <input type="number" class="form-control" id="total_limit" name="total_limit" required placeholder="Enter Limit here...">
+                </div>
+                <button type="submit" class="btn btn-primary">Extract Media</button>
+            </form>
+            <div id="status" class="status">Status: Idle</div>
+            <div class="controls">
+                <button id="download-csv" class="btn btn-success" disabled>Download CSV</button>
+                <button id="download-json" class="btn btn-success" disabled>Download JSON</button> <!-- New button -->
+                <button id="upload-mongo" class="btn btn-warning" disabled>Upload to MongoDB</button>
+                <div id="total-links">Total Links: 0</div>
+            </div>
+            <div id="output-table">
+                <div class="data-container">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>source</th>
+                                <th>date</th>
+                                <th>status</th>
+                                <th>botUserId</th>
+                                <th>tagId</th>
+                                <th>Language</th>
+                                <th>Name</th>
+                                <th>entities/media/0/media_url_https</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Output rows will be appended here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="previewer" id="previewer">
+            <div id="media-viewer"></div>
+            <div id="instructions">
+                Press F: Forward, P: Previous, D: Delete
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // List of bot user IDs for random selection
+            const randomBotUserIds = [
+                "2166078293", "711891205", "1375165134", "1209038811", "2159448328", "2468697933",
+                "2068141706", "2410674919", "1280763948", "2320135656", "1026433986", "1106225834",
+                "1765663446", "678156997", "733934735", "2625539203", "1000454470", "1759553279",
+                "1375023754", "1787801771", "812923376", "2722152421", "2150145594", "905720761",
+                "2315486539", "717860904", "833559980", "1959219586", "1834327675", "1133671267",
+                "2614831479", "971371687", "1362746469", "1247796087", "1014103089", "1489149742",
+                "880070524", "2195160564", "2639974908", "1905726952", "2565148436", "782346051",
+                "1550186579", "2287137598", "2352819993", "1897280373", "1978617872", "1224095776",
+                "2539914023"
+            ];
+    
+            // Array to hold media links
+            let mediaLinks = [];
+            // Current index in the media array
+            let currentIndex = -1;
+    
+            // Function to update the status text
+            const updateStatus = (message) => {
+                $('#status').text(`Status: ${message}`);
+            };
+    
+            // Function to display media in the previewer
+            const displayMedia = (link) => {
+                const mediaViewer = $('#media-viewer');
+                mediaViewer.empty(); // Clear previous media
+
+                if (!link || !link.url) {
+                    mediaViewer.html('<p>No media to display</p>');
+                    return;
+                }
+
+                // Determine if the URL is an image or video
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
+                const isImage = imageExtensions.some(ext => link.url.toLowerCase().endsWith(ext));
+
+                // Check if the URL is a video
+                const isVideo = link.url.toLowerCase().includes('.mp4') || link.url.toLowerCase().includes('.webm') || link.url.toLowerCase().includes('.ogg');
+
+                // Display image or video based on the media type
+                if (link.type === 'image' || isImage) {
+                    mediaViewer.html(`<img src="${link.url}" class="img-fluid" alt="Image Content">`);
+                } else if (link.type === 'video' || isVideo) {
+                    const videoElement = $('<video class="media-embed" controls autoplay playsinline></video>');
+                    const sourceElement = $('<source>').attr('src', link.url);
+
+                    // Determine the video type
+                    const videoType = link.url.toLowerCase().includes('.mp4') ? 'video/mp4' :
+                        link.url.toLowerCase().includes('.webm') ? 'video/webm' :
+                            link.url.toLowerCase().includes('.ogg') ? 'video/ogg' : 'video/unknown';
+
+                    sourceElement.attr('type', videoType);
+                    videoElement.append(sourceElement);
+                    mediaViewer.append(videoElement);
+
+                    // Preload video metadata and first frame
+                    videoElement[0].preload = 'auto';
+
+                    // Add event listeners to manage video playback
+                    videoElement.on('loadedmetadata', () => {
+                        // Video metadata is loaded, video is ready to play
+                        console.log('Video metadata loaded');
+                    });
+
+                    videoElement.on('canplay', () => {
+                        // Video can play through without buffering
+                        console.log('Video can play through');
+                        videoElement[0].play(); // Start playback once the video can play through
+                    });
+
+                    videoElement.on('error', (event) => {
+                        // Handle video loading errors
+                        console.error('Video loading error:', event.target.error);
+                        // Display an error message or attempt to reload the video
+                    });
+                } else {
+                    mediaViewer.html('<p>Unknown media type</p>');
+                }
+            };
+    
+            // Function to update the data table with media links
+            const updateTable = () => {
+                const tbody = $('#data-table tbody');
+                tbody.empty();
+    
+                // Populate table with media links
+                mediaLinks.forEach((link, index) => {
+                    const date = new Date();
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                    const year = date.getFullYear();
+                    const formattedDate = `${month}/${day}/${year}`;
+    
+                    const randomBotUserId = randomBotUserIds[Math.floor(Math.random() * randomBotUserIds.length)];
+    
+                    tbody.append(`
+                        <tr data-index="${index}">
+                            <td>Twitter</td>
+                            <td>${formattedDate}</td>
+                            <td>NEW</td>
+                            <td>${randomBotUserId}</td>
+                            <td>${link.tagId}</td>
+                            <td>Kannada</td>
+                            <td>Amruthakrishna</td>
+                            <td><a href="${link.url}" class="media-link" target="_blank">${link.url}</a></td>
+                        </tr>
+                    `);
+                });
+    
+                // Add click event to media links
+                $('.media-link').on('click', function (event) {
+                    event.preventDefault();
+                    const url = $(this).attr('href');
+                    const index = $(this).closest('tr').data('index');
+                    currentIndex = index;
+                    displayMedia(mediaLinks[currentIndex]);
+                });
+    
+                updateTotalLinks();
+            };
+    
+            // Function to update total links display
+            const updateTotalLinks = () => {
+                $('#total-links').text(`Total Links: ${mediaLinks.length}`);
+            };
+    
+            // Function to move to the next media link in the list
+            const moveToNext = () => {
+                if (currentIndex < mediaLinks.length - 1) {
+                    currentIndex++;
+                    displayMedia(mediaLinks[currentIndex]);
+                }
+            };
+    
+            // Function to move to the previous media link in the list
+            const moveToPrev = () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    displayMedia(mediaLinks[currentIndex]);
+                }
+            };
+    
+            // Function to delete the current media link from the list
+            const deleteCurrentLink = () => {
+                if (currentIndex >= 0 && currentIndex < mediaLinks.length) {
+                    mediaLinks.splice(currentIndex, 1);
+                    if (currentIndex >= mediaLinks.length) {
+                        currentIndex = mediaLinks.length - 1;
+                    }
+                    displayMedia(mediaLinks[currentIndex]);
+                    updateTable();
+                }
+            };
+    
+            // Handle keyboard shortcuts for navigation and deletion
+            const handleKeyEvents = (event) => {
+                switch (event.key.toUpperCase()) {
+                    case 'F':
+                        moveToNext();
+                        break;
+                    case 'P':
+                        moveToPrev();
+                        break;
+                    case 'D':
+                        deleteCurrentLink();
+                        break;
+                    default:
+                        break;
+                }
+            };
+    
+            // Listen for key events
+            $(document).on('keydown', handleKeyEvents);
+    
+            // Handle form submission for media extraction
+            $('#extract-form').on('submit', function (event) {
+                event.preventDefault();
+                const url = $('#url').val();
+                const mediaType = $('#media-type').val();
+                const tagId = $('#tagId').val();
+                const totalLimit = parseInt($('#total_limit').val());
+                
+                updateStatus('Processing...');
+    
+                // Make request to the server for media links
+                $.post('/get_shorts_links', {
+                    url,
+                    media_type: mediaType,
+                    total_limit: totalLimit,
+                    tagId
+                }, function (response) {
+                    // Handle successful response
+                    mediaLinks = response.shorts_links.map(link => ({
+                        url: link,
+                        type: mediaType,
+                        tagId
+                    }));
+    
+                    currentIndex = -1;
+                    moveToNext();
+                    updateTable();
+    
+                    $('#download-csv').prop('disabled', false);
+                    $('#download-json').prop('disabled', false);
+                    $('#upload-mongo').prop('disabled', false);
+    
+                    updateStatus('Completed');
+                    updateTotalLinks();
+                }).fail(() => {
+                    // Handle failure response
+                    updateStatus('Failed');
+                });
+            });
+    
+            // Handle CSV download
+            $('#download-csv').on('click', function () {
+                if (mediaLinks.length > 0) {
+                    // Prepare CSV data
+                    const date = new Date();
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                    const year = date.getFullYear();
+                    const formattedDate = `${month}/${day}/${year}`;
+                    const csvData = mediaLinks.map((link) => ({
+                        source: 'Twitter',
+                        date: formattedDate,
+                        status: 'NEW',
+                        botUserId: randomBotUserIds[Math.floor(Math.random() * randomBotUserIds.length)],
+                        tagId: link.tagId,
+                        Language: 'Kannada',
+                        Name: 'Amruthakrishna',
+                        media_url_https: link.url
+                    }));
+    
+                    let csvContent = 'source,date,status,botUserId,tagId,Language,Name,entities/media/0/media_url_https\n';
+                    csvData.forEach(row => {
+                        const csvRow = `${row.source},${row.date},${row.status},${row.botUserId},${row.tagId},${row.Language},${row.Name},${row.media_url_https}`;
+                        csvContent += `${csvRow}\n`;
+                    });
+    
+                    // Create a blob for the CSV file and trigger download
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const linkElement = document.createElement('a');
+                    linkElement.href = url;
+                    linkElement.download = 'output.csv';
+                    document.body.appendChild(linkElement);
+                    linkElement.click();
+                    document.body.removeChild(linkElement);
+                }
+            });
+    
+            // Handle Download JSON button click event
+            $('#download-json').on('click', function () {
+                const date = new Date();
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                const year = date.getFullYear();
+                const formattedDate = `${month}/${day}/${year}`;
+                const jsonData = mediaLinks.map(link => ({
+                    source: 'Twitter',
+                    date: formattedDate,
+                    status: 'NEW',
+                    botUserId: parseInt(randomBotUserIds[Math.floor(Math.random() * randomBotUserIds.length)], 10), // Convert to integer using parseInt
+                    tagId: parseInt(link.tagId, 10), //
+                    Language: 'Kannada',
+                    Name: 'Amruthakrisha',
+                    "entities/media/0/media_url_https": link.url
+                }));
+
+                const jsonString = JSON.stringify(jsonData, null, 2);
+
+                // Create a blob from the JSON data
+                const blob = new Blob([jsonString], { type: 'application/json' });
+
+                // Create a temporary anchor element
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = 'media_data.json';
+
+                // Trigger the download
+                link.click();
+            });
+
+    
+            // Handle Upload to MongoDB button click event
+            $('#upload-mongo').on('click', function () {
+                if (mediaLinks.length > 0) {
+                    const date = new Date();
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+                    const year = date.getFullYear();
+                    const formattedDate = `${month}/${day}/${year}`;
+                
+                    // Convert data to a JSON string
+                    const jsonData = mediaLinks.map(link => ({
+                    source: 'Twitter',
+                    date: formattedDate,
+                    status: 'NEW',
+                    botUserId: parseInt(randomBotUserIds[Math.floor(Math.random() * randomBotUserIds.length)], 10), // Convert to integer using parseInt
+                    tagId: parseInt(link.tagId, 10), // Convert to integer using parseInt
+                    Language: 'Kannada',
+                    Name: 'Amruthakrisha',
+                    "entities/media/0/media_url_https": link.url
+                }));
+                    // Stringify JSON data
+                    const jsonString = JSON.stringify(jsonData);
+    
+                    // Send a POST request with the JSON data
+                    $.ajax({
+                        url: '/upload_to_mongo', // URL of the server endpoint for uploading data
+                        method: 'POST',
+                        data: jsonString,
+                        contentType: 'application/json', // Set content type to JSON
+                        success: function (response) {
+                            // Handle successful upload
+                            updateStatus('Data uploaded successfully');
+                        },
+                        error: function (xhr, status, error) {
+                            // Handle upload error
+                            updateStatus(`Failed to upload data: ${error}`);
+                        }
+                    });
+                }
+            });
+    
+        });
+    </script>
+    
