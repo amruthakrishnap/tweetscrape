@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, make_response, Response,socketio
+from flask import Flask, request, jsonify, render_template, make_response, Response
 import csv
 import io
 import os
@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import logging
 from urllib.parse import quote
+from flask_socketio import SocketIO
 
 
 # Configure logging
