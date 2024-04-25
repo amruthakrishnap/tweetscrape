@@ -7,9 +7,6 @@ from jsonpath_ng import parse
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import logging
-from urllib.parse import quote
-from flask_socketio import SocketIO
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +23,10 @@ app = Flask(__name__)
 # client = MongoClient(mongo_con)
 # db = client['sample_mflix']
 # collection = db['Seeding_database']
+mongo_con = 'mongodb+srv://mngdb:FQx6gvpTCbYw6ln2@tomandjerry.g26gvoy.mongodb.net/'
+client = MongoClient(mongo_con)
+db = client['seeding_database']
+collection = db['seeding_collection']    
 
 # Initialize MongoDB collection
 
@@ -44,10 +45,8 @@ def extract_and_update_csv(url, media_type, total_limit):
     # Use Playwright browser automation to scrape the URL
     with sync_playwright() as p:
         # Specify the user data path
-        # user_data_path = '/Users/amruthakrishna/documents/firefox/AK/Default'  # Update this path as needed
-        browser = p.chromium.launch(headless=False, args=["--disable-blink-features=AutomationControlled"])
-        context = browser.new_context()
-        page = context.new_page()
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
 
         # Define the response handler function
         def handle_response(response):
@@ -100,7 +99,7 @@ def extract_and_update_csv(url, media_type, total_limit):
 
         # Close the page and context
         page.close()
-        context.close()
+        
 
     # Return the collected media URLs as a list and the total count
     return list(collected_media_urls), total_count
@@ -170,4 +169,4 @@ def upload_to_mongo():
         return jsonify({"error": f"An error occurred: {e}"}), 500
 
 if __name__ == '__main__':
-    SocketIO.run(app, host='0.0.0.0', port=5000)
+    app.run(debug=True, port=5000)
